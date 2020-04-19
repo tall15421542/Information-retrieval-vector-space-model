@@ -32,6 +32,7 @@ class Query{
   string fromStringToId(string number);
   void concepts_to_vector(string concepts);
   void get_result(InvertedFile&, DocContainer&, ofstream& rank_list_path, bool relevence_feedback);
+  void relevence_feedback(vector<pair<size_t, double> >& topk_doc_vec, DocContainer& doc_container);
   string id;
   string title;
   string question;

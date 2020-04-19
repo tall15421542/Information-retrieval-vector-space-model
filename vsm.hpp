@@ -7,15 +7,31 @@
 #include<map>
 
 #ifndef OKapi_ka
-#define OKapi_ka 500.0
+#define OKapi_ka 175.0
 #endif
 
 #ifndef OKapi_k
-#define OKapi_k 1.0
+#define OKapi_k 1.9
 #endif
 
 #ifndef OKapi_b
 #define OKapi_b 0.75
+#endif
+
+#ifndef FEEDBACK_DOC_NUM
+#define FEEDBACK_DOC_NUM 12
+#endif
+
+#ifndef FEEDBACK_TERM_NUM
+#define FEEDBACK_TERM_NUM 70
+#endif
+
+#ifndef FEEDBACK_ALPHA
+#define FEEDBACK_ALPHA 0.75
+#endif
+
+#ifndef FEEDBACK_BETA
+#define FEEDBACK_BETA (1-FEEDBACK_ALPHA)
 #endif
 
 class VectorWeightAlgorithm{

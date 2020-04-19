@@ -62,8 +62,12 @@ double get_ap(Collection * ans, Collection * my){
   return ap/(double)ans->docs_vec.size();
 }
 
-int main(){
-  ifstream my_rank_list("out.out");
+int main(int argc, char ** argv){
+  if(argc < 2){
+    cout << "input csv is required" << endl;
+    exit(1);
+  }
+  ifstream my_rank_list(argv[1]);
   if(!my_rank_list.is_open()){
     cout << "Cannot open file" << endl;
   }
