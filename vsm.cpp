@@ -5,6 +5,7 @@
 #include <vector>
 #include <math.h>
 #include <assert.h>
+#include <tuple>
 
 // (k + 1) tf / (k(1 - b + b * dl/avg_dl) + tf)
 double OKapi::getTF(size_t doc_id, size_t grams_id){
@@ -78,4 +79,79 @@ void TFIDF::calculateScore(size_t doc_id, vector<double> & term_vector){
   for(size_t grams_id = 0 ; grams_id < term_vector.size() ; ++grams_id){
      term_vector[grams_id] = tf->getTF(doc_id, grams_id) * idf->getIDF(grams_id); 
   }    
+}
+
+// helper
+
+TOPK_TERM_INFO_VEC * get_top_k_term(Document * doc, TFInterface * tf_interface, IDFInterface * idf, size_t k){
+  TOPK_TERM_INFO_VEC * topk_term_tfidf = new TOPK_TERM_INFO_VEC;
+  make_heap(topk_term_tfidf->begin(), topk_term_tfidf->end(), my_greater());
+  for(int i = 0 ; i < doc->term_vector.size() ; ++i){
+    size_t term_id = doc->term_vector[i];
+    size_t tf = doc->getTf(term_id);
+    double tfidf = tf_interface->getTF(doc->id, term_id) * idf->getIDF(term_id);
+
+    if(topk_term_tfidf->size() == k){
+      TERMID_TF_TFIDF_TUPLE& tuple = topk_term_tfidf->front();
+      if(get<2>(tuple) < tfidf){
+        pop_heap(topk_term_tfidf->begin(), topk_term_tfidf->end(), my_greater()); topk_term_tfidf->pop_back();
+        topk_term_tfidf->push_back(make_tuple(term_id, tf, tfidf)); push_heap(topk_term_tfidf->begin(), topk_term_tfidf->end(), my_greater());
+      }
+    }else if(topk_term_tfidf->size() < k){
+      topk_term_tfidf->push_back(make_tuple(term_id, tf, tfidf)); push_heap(topk_term_tfidf->begin(), topk_term_tfidf->end(), my_greater());    
+    }
+  }
+  sort_heap(topk_term_tfidf->begin(), topk_term_tfidf->end(), my_greater());
+  return topk_term_tfidf;
+}
+
+TOPK_TERM_INFO_FOR_EACH_DOC_VEC * get_topk_term_for_each_doc(DocContainer & docContainer, TFInterface * tf, 
+                                IDFInterface * idf, size_t k)
+{
+  TOPK_TERM_INFO_FOR_EACH_DOC_VEC* topk_term_for_each_doc = new TOPK_TERM_INFO_FOR_EACH_DOC_VEC;
+  vector<Document *>& docs_vector = docContainer.docs_vector;
+  for(size_t doc_id = 0 ; doc_id < docs_vector.size() ; ++doc_id){
+    Document * doc = docs_vector[doc_id];
+    topk_term_for_each_doc->push_back(get_top_k_term(doc, tf, idf, k));
+  }
+  return topk_term_for_each_doc;
+}
+
+void output_topk_inverted_file(InvertedFile& inverted_file, TOPK_TERM_INFO_FOR_EACH_DOC_VEC * topk_term_info_for_each_doc_vec_ptr){
+  INVERTED_FILE_MAP inverted_file_map; 
+  INVERTED_FILE_MAP::iterator it;
+  TOPK_TERM_INFO_FOR_EACH_DOC_VEC& topk_term_info_for_each_doc_vec = *topk_term_info_for_each_doc_vec_ptr;
+  for(size_t doc_id = 0 ; doc_id < topk_term_info_for_each_doc_vec.size() ; ++doc_id){
+    TOPK_TERM_INFO_VEC& topk_term_info_vec = *topk_term_info_for_each_doc_vec[doc_id];
+    for(size_t term_idx = 0 ; term_idx < topk_term_info_vec.size() ; ++term_idx){
+      TERMID_TF_TFIDF_TUPLE& tuple = topk_term_info_vec[term_idx];
+      size_t term_id = get<0>(tuple);
+      size_t tf = get<1>(tuple);
+      double tfidf = get<2>(tuple);
+      it = inverted_file_map.find(term_id);
+      if(it != inverted_file_map.end()){
+        DOC_INFO_VEC * doc_info_vec = it->second;
+        doc_info_vec->push_back(make_tuple(doc_id, tf, tfidf)); 
+      }else{
+        DOC_INFO_VEC* doc_info_vec;
+        doc_info_vec->push_back(make_tuple(doc_id, tf, tfidf));
+        inverted_file_map.insert(make_pair(term_id, doc_info_vec));
+      }
+    }
+  }
+  it = inverted_file_map.begin();
+  while(it != inverted_file_map.end()){
+    size_t term_id = it->first;
+    DOC_INFO_VEC& doc_info_vec = *(it->second);
+    pair<int, int> grams = inverted_file.get_grams_by_id(term_id);
+    cout << grams.first << " " << grams.second << " " << doc_info_vec.size() << "\n";
+    for(size_t i = 0 ; i < doc_info_vec.size() ; ++i){
+      DOC_ID_TF_TFIDF_TUPLE tuple = doc_info_vec[i];
+      size_t doc_id = get<0>(tuple);
+      size_t tf = get<1>(tuple);
+      double tfidf = get<2>(tuple);
+      cout << doc_id << " " << tf << " " << tfidf << "\n"; 
+    }
+    ++it;
+  }
 }

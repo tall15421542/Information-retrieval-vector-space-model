@@ -86,4 +86,24 @@ public:
   IDFInterface * idf;
 };
 
+// helper
+
+typedef tuple<size_t, size_t, double> DOC_ID_TF_TFIDF_TUPLE;
+typedef vector<DOC_ID_TF_TFIDF_TUPLE> DOC_INFO_VEC;
+typedef unordered_map<size_t, DOC_INFO_VEC *> INVERTED_FILE_MAP;
+
+typedef tuple<size_t, size_t, double> TERMID_TF_TFIDF_TUPLE;
+typedef vector<TERMID_TF_TFIDF_TUPLE> TOPK_TERM_INFO_VEC;
+typedef vector<TOPK_TERM_INFO_VEC *> TOPK_TERM_INFO_FOR_EACH_DOC_VEC;
+
+struct my_greater{
+  bool operator()(const TERMID_TF_TFIDF_TUPLE& a,const TERMID_TF_TFIDF_TUPLE& b) const{
+    return get<2>(a) > get<2>(b);
+  }
+};
+TOPK_TERM_INFO_VEC * get_top_k_term(Document * doc, TFInterface * tf_interface, IDFInterface * idf, size_t k);
+TOPK_TERM_INFO_FOR_EACH_DOC_VEC * get_topk_term_for_each_doc(DocContainer & docContainer, TFInterface * tf, 
+                                IDFInterface * idf, size_t k);
+void output_topk_inverted_file(InvertedFile& inverted_file, TOPK_TERM_INFO_FOR_EACH_DOC_VEC * topk_term_info_for_each_doc_vec_ptr);
+
 #endif

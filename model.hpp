@@ -8,6 +8,7 @@
 #include<sys/stat.h>
 #include<boost/functional/hash.hpp>
 #include<boost/algorithm/string.hpp>
+#include<tuple>
 
 using namespace std;
 
@@ -73,6 +74,7 @@ public:
     inverted_file.close();
   }
 
+
   int get_grams_id(pair<int, int> grams){
     unordered_map<pair<int, int>, size_t, boost::hash<pair<int, int> > >::iterator it = grams_to_id.find(grams);
     if(it != grams_to_id.end()){
@@ -136,6 +138,7 @@ public:
     }
     return boost::algorithm::to_lower_copy(file_path);
   }
+
   
   size_t id;
   size_t doc_len;
@@ -183,6 +186,7 @@ public:
   string get_file_id_by_id(size_t id){
     return docs_vector[id]->get_file_id();
   } 
+ 
   vector<Document *> docs_vector;
   double avg_doc_len;
 };

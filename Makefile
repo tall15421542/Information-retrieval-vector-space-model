@@ -1,4 +1,4 @@
-CFLAGS=-O3
+CFLAGS=-O1
 Main: main.o query.o model.o vsm.o 
 	g++ $(CFLAGS) -o Main main.o query.o model.o vsm.o
 main.o: main.cpp query.hpp model.hpp

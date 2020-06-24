@@ -23,6 +23,7 @@ int main(int argc, char * argv[]){
   string rank_list_path = "";
   string model_path = ""; 
   string NCTIR_dir = ""; 
+  int term_topk = 0;
   for(size_t i = 1 ; i < argc ; ++i){
     if(strcmp(argv[i], "-r") == 0){
       relevence_feedback = true;
@@ -34,18 +35,26 @@ int main(int argc, char * argv[]){
       model_path = argv[++i];
     }else if(strcmp(argv[i], "-d") == 0){
       NCTIR_dir = argv[++i];
+    }else if(strcmp(argv[i], "-k") == 0){
+      term_topk = atoi(argv[++i]);
     }else{
       cout << "Invalid Options" << endl;
       exit(1);
     }
   }
   if(query_path == ""){
-    cout << "query path -i is required" << endl;
-    exit(1);
+    cout << "No Query_path is specified" << endl;
+    if(!term_topk){
+      cout << "Query Path or Top k should be specified" << endl;
+      exit(1); 
+    }
   }
   if(rank_list_path == ""){
-    cout << "rank_list_path -o is required" << endl;
-    exit(1);
+    cout << "rank_list_path -o is not specified" << endl;
+    if(!term_topk){
+      cout << "Output Path or Top k should be specified" << endl;
+      exit(1); 
+    }
   }
   if(model_path == ""){
     cout << "model_path -m is required" << endl;
@@ -62,6 +71,7 @@ int main(int argc, char * argv[]){
   cout << "rank_list_path: " << rank_list_path << endl;
   cout << "model_path: " << model_path << endl;
   cout << "NCTIR_dir: " << NCTIR_dir << endl;
+  cout << "term_topk" << term_topk << endl;
 
   string file_list_path = model_path + "/file-list";
   DocContainer doc_container(file_list_path, NCTIR_dir);  
@@ -87,8 +97,15 @@ int main(int argc, char * argv[]){
   cout << "Finish initiate tf, idf" << endl;
 
   // query processing
-  QueriesContainer queries_container;
-  queries_container.parse(query_path, tf, idf);
-  queries_container.get_result(inverted_file, doc_container, rank_list_path, relevence_feedback);
-  cout << "Finish query processing" << endl;
+  if(query_path != ""){
+    QueriesContainer queries_container;
+    queries_container.parse(query_path, tf, idf);
+    queries_container.get_result(inverted_file, doc_container, rank_list_path, relevence_feedback);
+    cout << "Finish query processing" << endl;
+  }
+  if(term_topk){
+    cout << "Enter TOPK TERM" << endl;
+    TOPK_TERM_INFO_FOR_EACH_DOC_VEC * topk_term_info_for_each_doc_ptr = get_topk_term_for_each_doc(doc_container, tf, idf, term_topk);
+    output_topk_inverted_file(inverted_file, topk_term_info_for_each_doc_ptr);   
+  }
 }
