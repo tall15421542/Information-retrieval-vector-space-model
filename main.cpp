@@ -106,6 +106,6 @@ int main(int argc, char * argv[]){
   if(term_topk){
     cout << "Enter TOPK TERM" << endl;
     TOPK_TERM_INFO_FOR_EACH_DOC_VEC * topk_term_info_for_each_doc_ptr = get_topk_term_for_each_doc(doc_container, tf, idf, term_topk);
-    output_topk_inverted_file(inverted_file, topk_term_info_for_each_doc_ptr);   
+    output_topk_inverted_file(inverted_file, term_topk, topk_term_info_for_each_doc_ptr);   
   }
 }

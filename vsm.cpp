@@ -86,11 +86,11 @@ void TFIDF::calculateScore(size_t doc_id, vector<double> & term_vector){
 TOPK_TERM_INFO_VEC * get_top_k_term(Document * doc, TFInterface * tf_interface, IDFInterface * idf, size_t k){
   TOPK_TERM_INFO_VEC * topk_term_tfidf = new TOPK_TERM_INFO_VEC;
   make_heap(topk_term_tfidf->begin(), topk_term_tfidf->end(), my_greater());
-  for(int i = 0 ; i < doc->term_vector.size() ; ++i){
-    size_t term_id = doc->term_vector[i];
-    size_t tf = doc->getTf(term_id);
+  unordered_map<size_t, size_t>::iterator tf_map_it = doc->tf_map.begin();
+  while(tf_map_it != doc->tf_map.end()){
+    size_t term_id = tf_map_it->first;
+    size_t tf = tf_map_it->second;
     double tfidf = tf_interface->getTF(doc->id, term_id) * idf->getIDF(term_id);
-
     if(topk_term_tfidf->size() == k){
       TERMID_TF_TFIDF_TUPLE& tuple = topk_term_tfidf->front();
       if(get<2>(tuple) < tfidf){
@@ -100,8 +100,10 @@ TOPK_TERM_INFO_VEC * get_top_k_term(Document * doc, TFInterface * tf_interface, 
     }else if(topk_term_tfidf->size() < k){
       topk_term_tfidf->push_back(make_tuple(term_id, tf, tfidf)); push_heap(topk_term_tfidf->begin(), topk_term_tfidf->end(), my_greater());    
     }
+    ++tf_map_it;
   }
   sort_heap(topk_term_tfidf->begin(), topk_term_tfidf->end(), my_greater());
+  cout << "Finish doc " << doc->id << endl;
   return topk_term_tfidf;
 }
 
@@ -117,7 +119,19 @@ TOPK_TERM_INFO_FOR_EACH_DOC_VEC * get_topk_term_for_each_doc(DocContainer & docC
   return topk_term_for_each_doc;
 }
 
-void output_topk_inverted_file(InvertedFile& inverted_file, TOPK_TERM_INFO_FOR_EACH_DOC_VEC * topk_term_info_for_each_doc_vec_ptr){
+void output_topk_inverted_file(InvertedFile& inverted_file, size_t topk, TOPK_TERM_INFO_FOR_EACH_DOC_VEC * topk_term_info_for_each_doc_vec_ptr){
+  ofstream topk_inverted_file;
+  std::ostringstream stringStream;
+  stringStream << "topk_term_inverted_file/top_" << topk << "_inverted_file.csv";
+  string topk_inverted_file_path = stringStream.str(); 
+  topk_inverted_file.open(topk_inverted_file_path);
+  if(!topk_inverted_file.is_open()){
+    cout << "Cannot open topk inverted file" << endl;
+    exit(1);
+  }
+  else{
+    cout << "open " << topk_inverted_file_path << " successfully" << endl;
+  }
   INVERTED_FILE_MAP inverted_file_map; 
   INVERTED_FILE_MAP::iterator it;
   TOPK_TERM_INFO_FOR_EACH_DOC_VEC& topk_term_info_for_each_doc_vec = *topk_term_info_for_each_doc_vec_ptr;
@@ -133,7 +147,7 @@ void output_topk_inverted_file(InvertedFile& inverted_file, TOPK_TERM_INFO_FOR_E
         DOC_INFO_VEC * doc_info_vec = it->second;
         doc_info_vec->push_back(make_tuple(doc_id, tf, tfidf)); 
       }else{
-        DOC_INFO_VEC* doc_info_vec;
+        DOC_INFO_VEC* doc_info_vec = new DOC_INFO_VEC;
         doc_info_vec->push_back(make_tuple(doc_id, tf, tfidf));
         inverted_file_map.insert(make_pair(term_id, doc_info_vec));
       }
@@ -144,14 +158,15 @@ void output_topk_inverted_file(InvertedFile& inverted_file, TOPK_TERM_INFO_FOR_E
     size_t term_id = it->first;
     DOC_INFO_VEC& doc_info_vec = *(it->second);
     pair<int, int> grams = inverted_file.get_grams_by_id(term_id);
-    cout << grams.first << " " << grams.second << " " << doc_info_vec.size() << "\n";
+    topk_inverted_file << grams.first << " " << grams.second << " " << doc_info_vec.size() << "\n";
     for(size_t i = 0 ; i < doc_info_vec.size() ; ++i){
       DOC_ID_TF_TFIDF_TUPLE tuple = doc_info_vec[i];
       size_t doc_id = get<0>(tuple);
       size_t tf = get<1>(tuple);
       double tfidf = get<2>(tuple);
-      cout << doc_id << " " << tf << " " << tfidf << "\n"; 
+      topk_inverted_file << doc_id << " " << tf << " " << tfidf << "\n"; 
     }
     ++it;
   }
+  cout << "Selected Term Number: " << inverted_file_map.size() << endl;
 }

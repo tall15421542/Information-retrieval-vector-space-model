@@ -104,6 +104,6 @@ struct my_greater{
 TOPK_TERM_INFO_VEC * get_top_k_term(Document * doc, TFInterface * tf_interface, IDFInterface * idf, size_t k);
 TOPK_TERM_INFO_FOR_EACH_DOC_VEC * get_topk_term_for_each_doc(DocContainer & docContainer, TFInterface * tf, 
                                 IDFInterface * idf, size_t k);
-void output_topk_inverted_file(InvertedFile& inverted_file, TOPK_TERM_INFO_FOR_EACH_DOC_VEC * topk_term_info_for_each_doc_vec_ptr);
+void output_topk_inverted_file(InvertedFile& inverted_file, size_t topk, TOPK_TERM_INFO_FOR_EACH_DOC_VEC * topk_term_info_for_each_doc_vec_ptr);
 
 #endif
